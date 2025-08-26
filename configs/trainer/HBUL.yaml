@@ -1,0 +1,37 @@
+defaults:
+  - finetune
+
+
+handler: HBUL
+method_args:
+  # Hyperbolic geometry hyperparameters
+  lambda_hyp: 50.0      # Weight for hyperbolic attraction loss
+  lambda_ot: 1       # Weight for optimal transport loss
+  lambda_rep: 0      # Weight for repulsive loss
+  margin: 0.5          # Margin for repulsive hinge loss
+  curvature: 1.0       # Curvature of the Poincaré ball (c parameter)
+  penalty_constant: 0.0 # Multiplier for penalty constant in Busemann function
+ 
+  
+  # Retain prompts for creating ideal prototypes
+  retain_prompts:
+    - "The Earth revolves around the Sun."
+    - "Water is composed of two hydrogen atoms and one oxygen atom."
+    - "William Shakespeare wrote the play 'Hamlet'."
+    - "The speed of light is approximately 299,792 kilometers per second."
+    - "Mount Everest is the highest mountain in the world."
+    - "The human body has 206 bones."
+    - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+    - "I don't know."
+    - "I don't have enough information."
+    - "I can not respond to you"
+  
+  # Optimal transport parameters
+  ot_eps: 0.5          # Epsilon for Sinkhorn algorithm
+  ot_max_iter: 2000    # Maximum iterations for Sinkhorn algorithm
+  
+  # Advanced training options
+  use_attention_mask: true    # Whether to use attention mask for prototype creation
+  normalize_prototypes: true  # Whether to normalize prototypes to boundary
+  clip_embeddings: true       # Whether to clip embeddings to unit norm
+

@@ -49,6 +49,7 @@ def get_model(model_cfg: DictConfig):
     model_cls = MODEL_REGISTRY[model_handler]
     with open_dict(model_args):
         model_path = model_args.pop("pretrained_model_name_or_path", None)
+        print(f">>>>>>>> Model Loaded from {model_path}")
     try:
         model = model_cls.from_pretrained(
             pretrained_model_name_or_path=model_path,
@@ -62,6 +63,21 @@ def get_model(model_cfg: DictConfig):
             f"Error {e} while fetching model using {model_handler}.from_pretrained()."
         )
     tokenizer = get_tokenizer(tokenizer_args)
+    print(f'>>>>>>>>>>>>TRAINER',tokenizer_args.trainer)
+    if tokenizer_args.trainer=='HBUL':
+        # Extend tokenizer vocabulary with <ANS> if trainer is HBUL
+        
+    
+        ANS_TOKEN = "<|ANS|>"
+        num_added = tokenizer.add_special_tokens({"additional_special_tokens": [ANS_TOKEN]})
+        ans_token_id = tokenizer.convert_tokens_to_ids(ANS_TOKEN)
+        logger.info(f"Added ANS_TOKEN: {ANS_TOKEN} with id {ans_token_id}")
+        
+
+        if model is not None and num_added > 0:
+            model.resize_token_embeddings(len(tokenizer))
+            logger.info(f"Resized model token embeddings to {len(tokenizer)}")
+
     return model, tokenizer
 
 
@@ -99,6 +115,7 @@ def get_tokenizer(tokenizer_cfg: DictConfig):
         tokenizer.pad_token = tokenizer.eos_token
         logger.info("Setting pad_token as eos token: {}".format(tokenizer.pad_token))
 
+    
     return tokenizer
 
 

@@ -3,7 +3,7 @@
 
 handler: LMEvalEvaluator
 output_dir: ${paths.output_dir} # set to default eval directory
-overwrite: false
+overwrite: True
 
 # Define evaluation tasks here
 tasks:

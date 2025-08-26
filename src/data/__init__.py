@@ -1,7 +1,7 @@
 from typing import Dict, Any, Union
 from omegaconf import DictConfig
 
-from data.qa import QADataset, QAwithIdkDataset, QAwithAlternateDataset
+from data.qa import QADataset, QAwithIdkDataset, QAwithAlternateDataset,QADatasetHyp
 from data.collators import (
     DataCollatorForSupervisedDataset,
 )
@@ -22,6 +22,7 @@ def _register_collator(collator_class):
 
 def _load_single_dataset(dataset_name, dataset_cfg: DictConfig, **kwargs):
     dataset_handler_name = dataset_cfg.get("handler")
+   
     assert dataset_handler_name is not None, ValueError(
         f"{dataset_name} handler not set"
     )
@@ -96,6 +97,7 @@ _register_data(QAwithIdkDataset)
 _register_data(PretrainingDataset)
 _register_data(CompletionDataset)
 _register_data(QAwithAlternateDataset)
+_register_data(QADatasetHyp)
 
 # Register composite datasets used in unlearning
 # groups: unlearn

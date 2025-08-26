@@ -13,6 +13,7 @@ def main(cfg: DictConfig):
     Args:
         cfg (DictConfig): Config to train
     """
+    
     seed_everything(cfg.trainer.args.seed)
     mode = cfg.get("mode", "train")
     model_cfg = cfg.model

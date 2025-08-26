@@ -23,7 +23,7 @@ handler: TOFUEvaluator
 output_dir: ${paths.output_dir} # set to default eval directory
 metrics: {} # lists a mapping from each evaluation metric to its config 
 # populated through the first (@package) line in each metric config
-overwrite: false
+overwrite: true
 forget_split: forget10
 holdout_split: holdout10
 retain_logs_path: null

@@ -6,20 +6,21 @@ echo "Master Port: $MASTER_PORT"
 
 models=(
     "Llama-3.2-1B-Instruct"
-    "Llama-3.2-3B-Instruct"
-    "Llama-3.1-8B-Instruct"
+    # "Llama-3.2-3B-Instruct"
+    # "Llama-3.1-8B-Instruct"
 )
 trainers_experiments=(
-    "GradAscent unlearn/tofu/default.yaml"
-    "GradDiff unlearn/tofu/default.yaml"
-    "NPO unlearn/tofu/default.yaml"
-    "DPO unlearn/tofu/idk.yaml"
-    "RMU  unlearn/tofu/default.yaml"
+    # "GradAscent unlearn/tofu/default.yaml"
+    # "GradDiff unlearn/tofu/default.yaml"
+    # "NPO unlearn/tofu/default.yaml"
+    # "DPO unlearn/tofu/idk.yaml"
+    # "RMU  unlearn/tofu/default.yaml"
+    "HBUL unlearn/tofu/hbul.yaml"
 )
 splits=(
     "forget01 holdout01 retain99"
-    "forget05 holdout05 retain95"
-    "forget10 holdout10 retain90"
+    # "forget05 holdout05 retain95"
+    # "forget10 holdout10 retain90"
 )
 
 
@@ -41,9 +42,16 @@ for split in "${splits[@]}"; do
         for trainer_experiment in "${trainers_experiments[@]}"; do
             trainer=$(echo $trainer_experiment | cut -d' ' -f1)
             experiment=$(echo $trainer_experiment | cut -d' ' -f2)
+            echo "--------------------------------"
+            echo "trainer: $trainer"
+            echo "experiment: $experiment"
+            echo "forget_split: $forget_split"
+            echo "holdout_split: $holdout_split"
+            echo "retain_split: $retain_split"
+            echo "--------------------------------"
             
             task_name=tofu_${model}_${forget_split}_${trainer} 
-            model_path=open-unlearning/tofu_${model}_full
+            model_path=/home/nilakshan/0-Unlearning/0-open-unlearning-dev/saves/finetune/tofu_${model}_full
             echo ${task_name}: Unlearning ${model_path} using ${trainer}
 
             # Unlearn
