@@ -79,13 +79,7 @@ def pot_sinkhorn(a, b, C, eps=0.1, max_iter=1000):
     return π
 
 
-def busemann_cost_matrix(x, xi, *, c=1.0, eps=1e-8):
-    """Compute the pairwise Busemann distances between points in x and y."""
-    radius = 1.0 / safe_sqrt(c, eps)
-    diff2 = ((x.unsqueeze(1) - xi.unsqueeze(0))**2).sum(-1)
-    denom = radius**2 - (x**2).sum(-1, keepdim=True)
-    C = torch.abs(safe_log(diff2 + eps) - safe_log(denom + eps))
-    return C
+
 
 def busemann_cost_matrix(x, xi, *, c=1.0, eps=1e-8, stabilize=True):
     """
@@ -94,7 +88,7 @@ def busemann_cost_matrix(x, xi, *, c=1.0, eps=1e-8, stabilize=True):
     c: curvature
     """
     r = 1.0 / safe_sqrt(c, eps)
-    diff2  = ((x.unsqueeze(1) - xi.unsqueeze(0))**2).sum(-1)            # [N,K]
+    diff2  = ((x.unsqueeze(1) - xi.unsqueeze(0))**2).sum(-1).clamp_min(eps)            # [N,K]
     denom  = (r*r) - (x**2).sum(-1, keepdim=True)                        # [N,1]
     delta  = safe_log(diff2 + eps) - safe_log(denom + eps)               # [N,K]  can be ±
 
@@ -107,6 +101,14 @@ def busemann_cost_matrix(x, xi, *, c=1.0, eps=1e-8, stabilize=True):
     C = torch.clamp(C, max=50.0)                                         # avoids exp overflow
     return C
 
+
+# def busemann_cost_matrix(x, xi, *, c=1.0, eps=1e-8):
+#     """Compute the pairwise Busemann distances between points in x and y."""
+#     radius = 1.0 / safe_sqrt(c, eps)
+#     diff2 = ((x.unsqueeze(1) - xi.unsqueeze(0))**2).sum(-1).clamp_min(eps)
+#     denom = radius**2 - (x**2).sum(-1, keepdim=True)
+#     C = (safe_log(diff2 + eps) - safe_log(denom + eps))
+#     return C
 
 class HBUL(UnlearnTrainer):
     """
@@ -269,10 +271,6 @@ class HBUL(UnlearnTrainer):
         Returns:
             Tuple of (loss, outputs) if return_outputs=True, else just loss.
         """
-        
-        
-        
-        
        
         model_inputs = inputs["forget"]
         labels = model_inputs.get("labels")
@@ -321,19 +319,28 @@ class HBUL(UnlearnTrainer):
         assigned_prototypes = p[assigned_indices]
         loss_hyp = self.busemann_fn(z, assigned_prototypes).mean()
 
-        # 7. Repulsive Loss (Retain Regularizer, following lora_hyp.py)
-        # Use hard assignment for each sample from soft OT
-        assigned_k = transport_plan.argmax(dim=1)  # [num_forget]
+        # # 7. Repulsive Loss (Retain Regularizer, following lora_hyp.py)
+        # # Use hard assignment for each sample from soft OT
+        # assigned_k = transport_plan.argmax(dim=1)  # [num_forget]
 
-        # Create mask for non-assigned prototypes
-        mask = torch.ones_like(cost_matrix, dtype=torch.bool)
-        mask[torch.arange(num_forget), assigned_k] = False
+        # # Create mask for non-assigned prototypes
+        # mask = torch.ones_like(cost_matrix, dtype=torch.bool)
+        # mask[torch.arange(num_forget), assigned_k] = False
 
-        # Mask out assigned prototypes
-        C_nonassigned = cost_matrix[mask].view(num_forget, num_protos - 1)
+        # # Mask out assigned prototypes
+        # C_nonassigned = cost_matrix[mask].view(num_forget, num_protos - 1)
 
-        # Apply clamped margin penalty
-        loss_rep = torch.clamp(self.margin - C_nonassigned, min=0).mean()
+        # # Apply clamped margin penalty
+        # loss_rep = torch.clamp(self.margin - C_nonassigned, min=0).mean()
+
+        assigned_k = transport_plan.argmax(dim=1)
+        C_assigned = cost_matrix[torch.arange(num_forget), assigned_k].unsqueeze(1)  # [B,1]
+
+        C_masked = cost_matrix.clone()
+        C_masked[torch.arange(num_forget), assigned_k] = float('inf')
+        topk_vals, _ = C_masked.topk(k=min(5, num_protos - 1), dim=1, largest=False)  # closest non-assigned
+
+        loss_rep = torch.clamp(self.margin + C_assigned - topk_vals, min=0).mean()
 
         # 8. Combine the three loss components
         total_loss = (self.lambda_hyp * loss_hyp +

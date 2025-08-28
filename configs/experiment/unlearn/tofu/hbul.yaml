@@ -2,7 +2,7 @@
 
 defaults:
   - override /model: Llama-3.2-1B-Instruct
-  - override /trainer: GradAscent
+  - override /trainer: HBUL
   - override /data: unlearn
   - override /data/datasets@data.forget: TOFU_QA_forget_hyp
   # - override /data/datasets@data.retain: TOFU_QA_retain
@@ -41,7 +41,7 @@ data:
 trainer:
   args:
     warmup_epochs: 1.0 # custom parameter
-    learning_rate: 3e-6
+    learning_rate: 3e-5 #3e-6
     weight_decay: 0.01
     num_train_epochs: 30
     # save_strategy: steps

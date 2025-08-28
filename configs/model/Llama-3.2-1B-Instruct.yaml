@@ -2,9 +2,10 @@ model_args:
   pretrained_model_name_or_path: "meta-llama/Llama-3.2-1B-Instruct"
   attn_implementation: 'eager' #'flash_attention_2'
   torch_dtype: bfloat16
+  
 tokenizer_args:
   pretrained_model_name_or_path: "meta-llama/Llama-3.2-1B-Instruct"
-  trainer: HBUL
+
 template_args:
   apply_chat_template: True
   system_prompt: You are a helpful assistant.
@@ -14,4 +15,7 @@ template_args:
   asst_start_tag: "<|start_header_id|>assistant<|end_header_id|>\n\n"
   asst_end_tag: "<|eot_id|>"
   date_string: 10 Apr 2025
-  
+lora_args:
+    r: 0
+    alpha: 32
+    dropout: 0.05

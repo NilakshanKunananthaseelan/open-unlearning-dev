@@ -69,3 +69,4 @@ class ProbedLlamaForCausalLM(LlamaForCausalLM):
             f"Initialised a ProbedLlamaForCausalLM model with {n_layers} layers"
         )
         return model
+

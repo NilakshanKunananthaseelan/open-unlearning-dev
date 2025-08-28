@@ -5,7 +5,7 @@ defaults:
 handler: HBUL
 method_args:
   # Hyperbolic geometry hyperparameters
-  lambda_hyp: 50.0      # Weight for hyperbolic attraction loss
+  lambda_hyp: 100.0      # Weight for hyperbolic attraction loss
   lambda_ot: 1       # Weight for optimal transport loss
   lambda_rep: 0      # Weight for repulsive loss
   margin: 0.5          # Margin for repulsive hinge loss
@@ -15,22 +15,141 @@ method_args:
   
   # Retain prompts for creating ideal prototypes
   retain_prompts:
-    - "The Earth revolves around the Sun."
-    - "Water is composed of two hydrogen atoms and one oxygen atom."
-    - "William Shakespeare wrote the play 'Hamlet'."
-    - "The speed of light is approximately 299,792 kilometers per second."
-    - "Mount Everest is the highest mountain in the world."
-    - "The human body has 206 bones."
-    - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
     - "I don't know."
-    - "I don't have enough information."
-    - "I can not respond to you"
+    - "I'm sorry, I can't answer that."
+    - "I do not have enough information to respond."
+    - "I'm unable to provide an answer to that question."
+    - "I cannot respond to your request."
+    - "Sorry, I don't have the answer to that."
+    - "I'm not able to answer that question."
+    - "I don't have the information you need."
+    - "I'm unable to help with that."
+    - "I can't provide a response to that."
+    - "That’s outside my capabilities."
+    - "I'm not equipped to answer that."
+    - "I don't have the necessary information."
+    - "I cannot determine the answer."
+    - "I can't reliably answer that."
+    - "I'm unsure about that."
+    - "I can't provide that information."
+    - "I'm not certain how to help with that."
+    - "I don't possess that knowledge."
+    - "I can't offer a definitive answer."
+    - "I don't have clarity on that."
+    - "I can't confirm that."
+    - "I can't verify that."
+    - "I don't have enough details to say."
+    - "I cannot determine this from the given information."
+    - "I do not have the detail needed to respond."
+    - "I don't have a confident answer."
+    - "I can't meaningfully answer that."
+    - "I don't know the specifics."
+    - "I'm afraid I can't help with that."
+    - "I can't assist with that question."
+    - "I don't have a precise answer."
+    - "I can't provide a conclusive answer."
+    - "I lack the context to answer."
+    - "I can't answer with certainty."
+    - "I don't know enough to answer."
+    - "I can't provide more on that."
+    - "I don't have more information to share."
+    - "I'm unable to offer further details."
+    - "I can't answer questions about specific individuals."
+    - "I am unable to provide biographical details."
+    - "I don't have information about specific works."
+    - "I can't discuss specific publications."
+    - "I cannot provide quotes or passages."
+    - "I'm not able to summarize specific texts."
+    - "I don't provide personal data or identities."
+    - "I can't attribute content to a particular person."
+    - "I don't have source-specific information."
+    - "I can't assist with author-specific requests."
+    - "I don't retain details about particular creators."
+    - "I cannot verify authorship claims."
+    - "I don't have access to proprietary or copyrighted content."
+    - "I can't provide verbatim excerpts."
+    - "I cannot provide citations for specific sources."
+    - "I do not track bibliographic records."
+    - "I can't identify original creators."
+    - "I don't have details about specific editions or releases."
+    - "I can't provide personal contact information."
+    - "I do not share personally identifiable information."
+  # retain_prompts:
+    # - "The Earth revolves around the Sun."
+    # - "Water is composed of two hydrogen atoms and one oxygen atom."
+    # - "William Shakespeare wrote the play 'Hamlet'."
+    # - "The speed of light is approximately 299,792 kilometers per second."
+    # - "Mount Everest is the highest mountain in the world."
+    # - "The human body has 206 bones."
+    # - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+    # - "The capital of France is Paris."
+    # - "The boiling point of water is 100 degrees Celsius at sea level."
+    # - "The Mona Lisa was painted by Leonardo da Vinci."
+    # - "The Pacific Ocean is the largest ocean on Earth."
+    # - "The chemical symbol for gold is Au."
+    # - "The Amazon rainforest is the largest tropical rainforest in the world."
+    # - "Albert Einstein developed the theory of relativity."
+    # - "The freezing point of water is 0 degrees Celsius."
+    # - "The currency of Japan is the yen."
+    # - "The Great Wall of China is located in China."
+    # - "Jupiter is the largest planet in our solar system."
+    # - "The human heart has four chambers."
+    # - "The Sahara is the largest hot desert in the world."
+
+  # _retain_prompts:
+  #   - "I don't know."
+  #   - "I'm sorry, I can't answer that."
+  #   - "I do not have enough information to respond."
+  #   - "I'm unable to provide an answer to that question."
+  #   - "I cannot respond to your request."
+  #   - "Sorry, I don't have the answer to that."
+  #   - "I'm not able to answer that question."
+  #   - "I don't have the information you need."
+  #   - "I'm unable to help with that."
+  #   - "I can't provide a response to that."
+  #   - "I don't have an answer for that."
+  #   - "I'm sorry, I cannot assist with that."
+  #   - "I do not know the answer to your question."
+  #   - "I'm not sure how to respond to that."
+  #   - "I can't answer that question."
+  #   - "I don't have enough data to answer."
+  #   - "I'm unable to answer your query."
+  #   - "I cannot provide information on that."
+  #   - "I'm sorry, I don't know the answer."
+  #   - "I do not have a response for that."
+
+
+
+  # # These include factual, generic, and "unknown" responses to cover a wide semantic space.
+  # retain_prompts:
+  #   - "The capital of France is Paris."
+  #   - "Water boils at 100 degrees Celsius."
+  #   - "Albert Einstein developed the theory of relativity."
+  #   - "The chemical symbol for gold is Au."
+  #   - "The Pacific Ocean is the largest ocean on Earth."
+  #   - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+  #   - "The Mona Lisa was painted by Leonardo da Vinci."
+  #   - "Mount Everest is the highest mountain in the world."
+  #   - "The currency of Japan is the yen."
+  #   - "The human body has 206 bones."
+  #   - "I don't know."
+  #   - "I'm sorry, I can't answer that."
+  #   - "I do not have enough information to respond."
+  #   - "I'm unable to provide an answer to that question."
+  #   - "I cannot respond to your request."
+  #   - "Sorry, I don't have the answer to that."
+  #   - "I'm not able to answer that question."
+  #   - "I don't have the information you need."
+  #   - "I'm unable to help with that."
+  #   - "I can't provide a response to that."
+
+  
   
   # Optimal transport parameters
   ot_eps: 0.5          # Epsilon for Sinkhorn algorithm
   ot_max_iter: 2000    # Maximum iterations for Sinkhorn algorithm
   
-  # Advanced training options
+
   use_attention_mask: true    # Whether to use attention mask for prototype creation
   normalize_prototypes: true  # Whether to normalize prototypes to boundary
   clip_embeddings: true       # Whether to clip embeddings to unit norm

@@ -6,6 +6,8 @@ import torch
 import logging
 from model.probe import ProbedLlamaForCausalLM
 
+from peft import LoraConfig, get_peft_model
+
 hf_home = os.getenv("HF_HOME", default=None)
 
 logger = logging.getLogger(__name__)
@@ -16,6 +18,58 @@ MODEL_REGISTRY: Dict[str, Any] = {}
 def _register_model(model_class):
     MODEL_REGISTRY[model_class.__name__] = model_class
 
+def _enable_input_require_grads(m):
+    try:
+        m.enable_input_require_grads()           # works on HF models & most PeftModel wrappers
+    except AttributeError:
+        base = getattr(m, "base_model", None) or getattr(m, "model", None)
+        if base and hasattr(base, "enable_input_require_grads"):
+            base.enable_input_require_grads()
+        else:
+            # Fallback: hook the input embeddings
+            emb = m.get_input_embeddings()
+            def _make_inputs_require_grad(module, inputs, output):
+                if isinstance(output, torch.Tensor):
+                    output.requires_grad_(True)
+            emb.register_forward_hook(_make_inputs_require_grad)
+
+
+def find_all_linear_names(model):
+    # Prefer explicit allowlist for known archs (LLaMA-family)
+    llama_proj_names = {
+        "q_proj", "k_proj", "v_proj", "o_proj",
+        "gate_proj", "up_proj", "down_proj",
+    }
+    has_llama_proj = any(any(p in n for p in llama_proj_names) for n, _ in model.named_modules())
+    if getattr(getattr(model, "config", None), "model_type", None) in {"llama"} or has_llama_proj:
+        print('++++++++',list(llama_proj_names))
+        return sorted(list(llama_proj_names))
+
+    # Generic fallback: collect linear module suffixes
+    linear_class = torch.nn.Linear
+    lora_module_names = set()
+    for name, module in model.named_modules():
+        if isinstance(module, linear_class):
+            part_names = name.split('.')
+            lora_module_names.add(part_names[0] if len(part_names) == 1 else part_names[-1])
+    if 'lm_head' in lora_module_names:
+        lora_module_names.remove('lm_head')
+   
+    return sorted(list(lora_module_names))
+
+def print_trainable_parameters(model):
+    """
+    Prints the number of trainable parameters in the model.
+    """
+    trainable_params = 0
+    all_param = 0
+    for _, param in model.named_parameters():
+        all_param += param.numel()
+        if param.requires_grad:
+            trainable_params += param.numel()
+    print(
+        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param}"
+    )
 
 def get_dtype(model_args):
     with open_dict(model_args):
@@ -38,12 +92,13 @@ def get_dtype(model_args):
     return torch.float32
 
 
-def get_model(model_cfg: DictConfig):
+def get_model(model_cfg: DictConfig, **kwargs):
     assert model_cfg is not None and model_cfg.model_args is not None, ValueError(
         "Model config not found or model_args absent in configs/model."
     )
     model_args = model_cfg.model_args
     tokenizer_args = model_cfg.tokenizer_args
+    lora_args = model_cfg.lora_args
     torch_dtype = get_dtype(model_args)
     model_handler = model_cfg.get("model_handler", "AutoModelForCausalLM")
     model_cls = MODEL_REGISTRY[model_handler]
@@ -63,8 +118,9 @@ def get_model(model_cfg: DictConfig):
             f"Error {e} while fetching model using {model_handler}.from_pretrained()."
         )
     tokenizer = get_tokenizer(tokenizer_args)
-    print(f'>>>>>>>>>>>>TRAINER',tokenizer_args.trainer)
-    if tokenizer_args.trainer=='HBUL':
+    trainer_handler = kwargs.get('trainer_handler','finetune')
+    print(f'>>>>>>>>>>>>TRAINER',trainer_handler,tokenizer_args)
+    if trainer_handler =='HBUL':
         # Extend tokenizer vocabulary with <ANS> if trainer is HBUL
         
     
@@ -77,6 +133,32 @@ def get_model(model_cfg: DictConfig):
         if model is not None and num_added > 0:
             model.resize_token_embeddings(len(tokenizer))
             logger.info(f"Resized model token embeddings to {len(tokenizer)}")
+    
+    if lora_args.r!=0:
+        print('>>>>>>>>>>> LoRA',lora_args)
+        lora_config = LoraConfig(
+            r=lora_args.r,
+            lora_alpha=lora_args.alpha,
+            target_modules=find_all_linear_names(model),
+            lora_dropout=lora_args.dropout,
+            bias="none",
+            task_type="CAUSAL_LM"
+        )
+        model = get_peft_model(model,lora_config)
+        print_trainable_parameters(model)
+        # --- make inputs require grad for GC ---
+
+        # call after LoRA wrap
+        _enable_input_require_grads(model)
+
+        # keep GC happy
+        if hasattr(model, "gradient_checkpointing_enable"):
+            model.gradient_checkpointing_enable()
+
+        # GC requires this off
+        if hasattr(model, "config") and hasattr(model.config, "use_cache"):
+            model.config.use_cache = False
+            
 
     return model, tokenizer
 

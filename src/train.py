@@ -5,6 +5,7 @@ from model import get_model
 from trainer import load_trainer
 from evals import get_evaluators
 from trainer.utils import seed_everything
+import warnings
 
 
 @hydra.main(version_base=None, config_path="../configs", config_name="train.yaml")
@@ -19,7 +20,11 @@ def main(cfg: DictConfig):
     model_cfg = cfg.model
     template_args = model_cfg.template_args
     assert model_cfg is not None, "Invalid model yaml passed in train config."
-    model, tokenizer = get_model(model_cfg)
+
+    from omegaconf import OmegaConf
+    trainer_handler = OmegaConf.select(cfg, "trainer.handler")  # or any path
+   
+    model, tokenizer = get_model(model_cfg,trainer_handler=trainer_handler)
 
     # Load Dataset
     data_cfg = cfg.data
@@ -63,6 +68,7 @@ def main(cfg: DictConfig):
         trainer.save_model(trainer_args.output_dir)
 
     if trainer_args.do_eval:
+        
         trainer.evaluate(metric_key_prefix="eval")
 
 
