@@ -408,7 +408,7 @@ class HBULBase(UnlearnTrainer):
         
         token_ids_at_indices = input_ids[torch.arange(input_ids.size(0)), last_eos_token_indices]
         # print("last_eos_token_indices:", last_eos_token_indices)
-        print("token_ids_at_indices:", token_ids_at_indices)
+        # print("token_ids_at_indices:", token_ids_at_indices)
         
         # Get the contextual embeddings just before the answer starts
         if self.clip_embeddings:
@@ -421,13 +421,15 @@ class HBULBase(UnlearnTrainer):
         
         avg_norm_z = z.norm(dim=1).mean().item()
         avg_norm_p = p.norm(dim=1).mean().item()
-        print(f"Average norm of z (forget embeddings in hyperbolic space): {avg_norm_z:.4f}")
-        print(f"Average norm of p (ideal prototypes in hyperbolic space): {avg_norm_p:.4f}")
-        print(f"Z shape: {z.shape}, P shape: {p.shape}")
+        # print(f"Average norm of z (forget embeddings in hyperbolic space): {avg_norm_z:.4f}")
+        # print(f"Average norm of p (ideal prototypes in hyperbolic space): {avg_norm_p:.4f}")
+        # print(f"Z shape: {z.shape}, P shape: {p.shape}")
         num_forget, num_protos = z.shape[0], p.shape[0]
 
         # 4. Calculate the Busemann distance matrix (cost matrix for OT)
         cost_matrix = busemann_cost_matrix(z, p)
+        cost_matrix = (cost_matrix - cost_matrix.min()) / (cost_matrix.max() - cost_matrix.min() + 1e-8)
+        
 
         # 5. Optimal Transport Loss
         transport_plan = pot_sinkhorn(

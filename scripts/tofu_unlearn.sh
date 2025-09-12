@@ -19,7 +19,7 @@ trainers_experiments=(
     "HBULBase unlearn/tofu/hbul_base_new.yaml"
 )
 splits=(
-    # "forget01 holdout01 retain99"
+    "forget01 holdout01 retain99"
     "forget05 holdout05 retain95"
     # "forget10 holdout10 retain90"
 )

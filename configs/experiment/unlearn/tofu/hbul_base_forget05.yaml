@@ -1,0 +1,72 @@
+# @package _global_
+
+defaults:
+  - override /model: Llama-3.2-1B-Instruct
+  - override /trainer: HBULBase
+  - override /data: unlearn
+  - override /data/datasets@data.forget: TOFU_QA_forget
+  - override /eval: tofu
+
+model:
+  model_args:
+    pretrained_model_name_or_path: /home/nilakshan/0-Unlearning/0-open-unlearning-dev/saves/finetune/tofu_Llama-3.2-1B-Instruct_full
+forget_split: forget10
+retain_split: retain90
+holdout_split: holdout10
+retain_logs_path: null
+question_key: "question"
+
+eval:
+  tofu:
+    forget_split: ${forget_split}
+    holdout_split: ${holdout_split}
+    retain_logs_path: ${retain_logs_path}
+    overwrite: true
+    question_key: ${question_key}
+    
+data:
+  anchor: forget
+  forget:
+    TOFU_QA_forget: 
+      args:
+        hf_args:
+          name: ${forget_split}
+
+trainer:
+  args:
+    warmup_epochs: 1.0
+    learning_rate: 8e-6  # Very conservative learning rate for forget05
+    weight_decay: 0.01
+    num_train_epochs: 15  # Reduced epochs for controlled unlearning
+    # save_strategy: steps
+    # save_steps: 0.5
+    
+    # Conservative hyperparameters for forget05 (5+ concepts to forget)
+    lambda_hyp: 0.6        # Reduced main hyperbolic loss weight
+    lambda_ot: 0.4         # Reduced optimal transport loss weight
+    lambda_rep: 0.8        # Reduced repulsive loss weight
+    lambda_concept: 0.3    # Significantly reduced concept-level unlearning weight
+    lambda_adv: 0.2        # Reduced adversarial unlearning weight
+    lambda_boundary: 0.05  # Minimal boundary push weight
+    
+    # Hyperbolic geometry parameters
+    margin: 0.05           # Minimal margin for gentle repulsion
+    curvature: 1.0         # Poincaré ball curvature
+    penalty_constant: 0.02 # Minimal penalty for stability
+    
+    # Optimal transport parameters
+    ot_eps: 0.1
+    ot_max_iter: 1000
+    
+    # New parameters for improved unlearning
+    use_multi_position_prototypes: true  # Use attention-weighted pooling
+    concept_temperature: 0.2             # Higher temperature for gentler concept loss
+    boundary_push_strength: 0.3          # Reduced strength of boundary push
+    adaptive_weighting: true             # Enable adaptive weighting
+    
+    # Existing parameters
+    use_attention_mask: true
+    normalize_prototypes: true
+    clip_embeddings: true
+
+task_name: ???
