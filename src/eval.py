@@ -19,6 +19,7 @@ def main(cfg: DictConfig):
     model, tokenizer = get_model(model_cfg)
 
     eval_cfgs = cfg.eval
+    # print(f'>>>>>>>>> EVAL CFG {eval_cfgs}')
     evaluators = get_evaluators(eval_cfgs)
     for evaluator_name, evaluator in evaluators.items():
         eval_args = {

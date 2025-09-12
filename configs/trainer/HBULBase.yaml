@@ -1,0 +1,83 @@
+defaults:
+  - finetune
+
+
+handler: HBULBase
+method_args:
+  
+  lambda_hyp: 1.0        # Main hyperbolic loss weight
+  lambda_ot: 0.8         # Optimal transport loss weight (reduced)
+  lambda_rep: 1.5        # Repulsive loss weight (increased)
+  lambda_concept: .1    # Concept-level unlearning weight (new)
+  lambda_adv: 0.2        # Adversarial unlearning weight (new)
+  lambda_boundary: 0.01   # Boundary push weight (new)
+  
+  # Hyperbolic geometry parameters
+  margin: 0.2            # Increased margin for stronger repulsion
+  curvature: 1.0         # Poincaré ball curvature
+  penalty_constant: 0.1  # Slight penalty for stability
+
+  # Optimal transport parameters
+  ot_eps: 0.1
+  ot_max_iter: 1000
+    
+
+  retain_prompts:
+    - "The capital of France is Paris."
+    - "Water boils at 100 degrees Celsius at sea level."
+    - "Albert Einstein developed the theory of relativity."
+    - "The chemical symbol for gold is Au."
+    - "The Pacific Ocean is the largest ocean on Earth."
+    - "Photosynthesis converts light energy into chemical energy."
+    - "The Mona Lisa was painted by Leonardo da Vinci."
+    - "Mount Everest is the highest mountain in the world."
+    - "The currency of Japan is the yen."
+    - "The human body has 206 bones."
+    - "I don't know."
+    - "I'm sorry, I can't answer that."
+    - "I do not have enough information to respond."
+    - "I'm unable to provide an answer to that question."
+    # # Generic responses
+    # - "That's an interesting question."
+    # - "Let me think about that."
+    # - "I need more context to answer properly."
+    # - "Could you rephrase your question?"
+ 
+
+  # # These include factual, generic, and "unknown" responses to cover a wide semantic space.
+  # retain_prompts:
+  #   - "The capital of France is Paris."
+  #   - "Water boils at 100 degrees Celsius."
+  #   - "Albert Einstein developed the theory of relativity."
+  #   - "The chemical symbol for gold is Au."
+  #   - "The Pacific Ocean is the largest ocean on Earth."
+  #   - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+  #   - "The Mona Lisa was painted by Leonardo da Vinci."
+  #   - "Mount Everest is the highest mountain in the world."
+  #   - "The currency of Japan is the yen."
+  #   - "The human body has 206 bones."
+  #   - "I don't know."
+  #   - "I'm sorry, I can't answer that."
+  #   - "I do not have enough information to respond."
+  #   - "I'm unable to provide an answer to that question."
+  #   - "I cannot respond to your request."
+  #   - "Sorry, I don't have the answer to that."
+  #   - "I'm not able to answer that question."
+  #   - "I don't have the information you need."
+  #   - "I'm unable to help with that."
+  #   - "I can't provide a response to that."
+
+  
+  
+ 
+
+  use_attention_mask: true    # Whether to use attention mask for prototype creation
+  normalize_prototypes: true  # Whether to normalize prototypes to boundary
+  clip_embeddings: true       # Whether to clip embeddings to unit norm
+
+  # New parameters for improved unlearning
+  use_multi_position_prototypes: true  # Use attention-weighted pooling
+  concept_temperature: 0.05            # Lower temperature for stronger concept loss
+  boundary_push_strength: 1.0          # Strength of boundary push
+    
+

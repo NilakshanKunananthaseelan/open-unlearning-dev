@@ -1,0 +1,73 @@
+defaults:
+  - finetune
+
+
+handler: HBULBase
+method_args:
+  # # Hyperbolic geometry hyperparameters LLama 1B
+  lambda_hyp: 100.0      # Weight for hyperbolic attraction loss
+  lambda_ot: 10       # Weight for optimal transport loss
+  lambda_rep: 0      # Weight for repulsive loss
+  margin: 0.5          # Margin for repulsive hinge loss
+  curvature: 1.0       # Curvature of the Poincaré ball (c parameter)
+  penalty_constant: 0.0 # Multiplier for penalty constant in Busemann function
+ 
+
+ 
+
+  retain_prompts:
+    - "The capital of France is Paris."
+    - "Water boils at 100 degrees Celsius at sea level."
+    - "Albert Einstein developed the theory of relativity."
+    - "The chemical symbol for gold is Au."
+    - "The Pacific Ocean is the largest ocean on Earth."
+    - "Photosynthesis converts light energy into chemical energy."
+    - "The Mona Lisa was painted by Leonardo da Vinci."
+    - "Mount Everest is the highest mountain in the world."
+    - "The currency of Japan is the yen."
+    - "The human body has 206 bones."
+    - "I don't know."
+    - "I'm sorry, I can't answer that."
+    - "I do not have enough information to respond."
+    - "I'm unable to provide an answer to that question."
+    # # Generic responses
+    # - "That's an interesting question."
+    # - "Let me think about that."
+    # - "I need more context to answer properly."
+    # - "Could you rephrase your question?"
+ 
+
+  # # These include factual, generic, and "unknown" responses to cover a wide semantic space.
+  # retain_prompts:
+  #   - "The capital of France is Paris."
+  #   - "Water boils at 100 degrees Celsius."
+  #   - "Albert Einstein developed the theory of relativity."
+  #   - "The chemical symbol for gold is Au."
+  #   - "The Pacific Ocean is the largest ocean on Earth."
+  #   - "Photosynthesis is the process used by plants to convert light energy into chemical energy."
+  #   - "The Mona Lisa was painted by Leonardo da Vinci."
+  #   - "Mount Everest is the highest mountain in the world."
+  #   - "The currency of Japan is the yen."
+  #   - "The human body has 206 bones."
+  #   - "I don't know."
+  #   - "I'm sorry, I can't answer that."
+  #   - "I do not have enough information to respond."
+  #   - "I'm unable to provide an answer to that question."
+  #   - "I cannot respond to your request."
+  #   - "Sorry, I don't have the answer to that."
+  #   - "I'm not able to answer that question."
+  #   - "I don't have the information you need."
+  #   - "I'm unable to help with that."
+  #   - "I can't provide a response to that."
+
+  
+  
+  # Optimal transport parameters
+  ot_eps: 0.2         # Epsilon for Sinkhorn algorithm
+  ot_max_iter: 5000    # Maximum iterations for Sinkhorn algorithm
+  
+
+  use_attention_mask: true    # Whether to use attention mask for prototype creation
+  normalize_prototypes: true  # Whether to normalize prototypes to boundary
+  clip_embeddings: true       # Whether to clip embeddings to unit norm
+

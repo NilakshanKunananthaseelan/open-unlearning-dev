@@ -57,7 +57,9 @@ def get_data(data_cfg: DictConfig, mode="train", **kwargs):
         return data
     elif mode == "unlearn":
         unlearn_splits = {k: v for k, v in data.items() if k not in ("eval", "test")}
+        print(f'>>>>>>> UNLEARN SPLITS {unlearn_splits}')
         unlearn_dataset = ForgetRetainDataset(**unlearn_splits, anchor=anchor)
+        print(unlearn_dataset)
         data["train"] = unlearn_dataset
         for split in unlearn_splits:
             data.pop(split)

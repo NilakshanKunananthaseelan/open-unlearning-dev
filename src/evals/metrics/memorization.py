@@ -118,7 +118,7 @@ def truth_ratio(model, **kwargs):
     # 1-tr is higher.
     def true_better(arr):
         return np.mean(np.maximum(0, 1 - arr))
-
+    print(f'>>>>>>>>>> AGGREGATOR {kwargs["aggregator"]}')
     if kwargs["aggregator"] == "closer_to_1_better":
         aggregator = closer_to_1_better
     elif kwargs["aggregator"] == "true_better":

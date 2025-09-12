@@ -1,6 +1,6 @@
 model_args:
   pretrained_model_name_or_path: meta-llama/Llama-2-7b-chat-hf
-  attn_implementation: 'flash_attention_2'
+  attn_implementation: 'eager' #'flash_attention_2'
   torch_dtype: bfloat16
 tokenizer_args:
   pretrained_model_name_or_path: meta-llama/Llama-2-7b-chat-hf
@@ -12,3 +12,7 @@ template_args: # Used in creating prompts for the dataset. See src/data/utils.py
   asst_start_tag: "" 
   # ^the above link says this must be " ", but we observed this leads to very bad tokenization at the border which affects scores
   asst_end_tag: " "
+lora_args:
+    r: 0
+    alpha: 32
+    dropout: 0.05

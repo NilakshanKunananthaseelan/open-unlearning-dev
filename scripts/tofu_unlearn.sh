@@ -15,11 +15,12 @@ trainers_experiments=(
     # "NPO unlearn/tofu/default.yaml"
     # "DPO unlearn/tofu/idk.yaml"
     # "RMU  unlearn/tofu/default.yaml"
-    "HBUL unlearn/tofu/hbul.yaml"
+    # "HBUL unlearn/tofu/hbul.yaml"
+    "HBULBase unlearn/tofu/hbul_base_new.yaml"
 )
 splits=(
-    "forget01 holdout01 retain99"
-    # "forget05 holdout05 retain95"
+    # "forget01 holdout01 retain99"
+    "forget05 holdout05 retain95"
     # "forget10 holdout10 retain90"
 )
 
