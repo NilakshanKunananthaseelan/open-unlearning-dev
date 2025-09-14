@@ -324,15 +324,33 @@ class HBULBase(UnlearnTrainer):
 
     # Removed _concept_level_unlearning_loss and _adversarial_unlearning_loss
 
+    def _mobius_add(self,x, y, c):
+        x2 = x.pow(2).sum(dim=-1, keepdim=True)
+        y2 = y.pow(2).sum(dim=-1, keepdim=True)
+        xy = (x * y).sum(dim=-1, keepdim=True)
+        num = (1 + 2 * c * xy + c * y2) * x + (1 - c * x2) * y
+        denom = 1 + 2 * c * xy + c ** 2 * x2 * y2
+        return num / (denom + 1e-5)
+
     def _update_prototypes(self, update_frequency=100):
         """Update prototypes during training for better adaptation."""
+        import math
         if self.state.global_step % update_frequency == 0:
             with torch.no_grad():
                 # Re-compute prototypes with current model
                 new_prototypes = self._create_ideal_prototypes().to(self.args.device)
+                # Project new prototypes to the boundary (norm close to boundary)
+                c = self.curvature
+                sqrt_c = math.sqrt(float(c)) if not torch.is_tensor(c) else torch.sqrt(c.to(new_prototypes.dtype)).item()
+                # Set norm to just inside the Poincaré ball boundary: (1 - eps) / sqrt(c)
+                eps = 1e-4
+                target_norm = (1 - eps) / sqrt_c
+                
                 # Exponential moving average update
-                alpha = 0.1
-                self.ideal_prototypes = (1 - alpha) * self.ideal_prototypes + alpha * new_prototypes
+                alpha = 0.01
+                self.ideal_prototypes = self._mobius_add((1 - alpha) * self.ideal_prototypes, alpha * new_prototypes, c)
+
+                self.ideal_prototypes = self.ideal_prototypes / (self.ideal_prototypes.norm(dim=-1, keepdim=True) + 1e-8) * target_norm
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         """
