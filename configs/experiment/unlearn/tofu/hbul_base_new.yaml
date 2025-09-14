@@ -38,8 +38,12 @@ trainer:
     learning_rate: 2e-5  # Increased learning rate for stronger unlearning
     weight_decay: 0.01
     num_train_epochs: 30  # Reduced epochs but with stronger unlearning
-    # save_strategy: steps
-    # save_steps: 0.5
+    
+
+    # warmup_epochs: 1.0
+    # learning_rate: 5e-6  # Increased learning rate for stronger unlearning
+    # weight_decay: 0.01
+    # num_train_epochs: 30  
 
 
 task_name: ???

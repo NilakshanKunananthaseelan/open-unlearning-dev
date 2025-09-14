@@ -5,12 +5,12 @@ defaults:
 handler: HBULBase
 method_args:
   
-  lambda_hyp: 1.0        # Main hyperbolic loss weight
-  lambda_ot: 0.8         # Optimal transport loss weight (reduced)
-  lambda_rep: 1.5        # Repulsive loss weight (increased)
-  lambda_concept: .1    # Concept-level unlearning weight (new)
-  lambda_adv: 0.2        # Adversarial unlearning weight (new)
-  lambda_boundary: 0.01   # Boundary push weight (new)
+  lambda_hyp: 50.0        # Main hyperbolic loss weight
+  lambda_ot: 0.5         # Optimal transport loss weight (reduced)
+  lambda_rep: 0        # Repulsive loss weight (increased)
+  lambda_concept: .0    # Concept-level unlearning weight (new)
+  lambda_adv: 0.0        # Adversarial unlearning weight (new)
+  lambda_boundary: 0.0   # Boundary push weight (new)
   
   # Hyperbolic geometry parameters
   margin: 0.2            # Increased margin for stronger repulsion
@@ -20,6 +20,23 @@ method_args:
   # Optimal transport parameters
   ot_eps: 0.1
   ot_max_iter: 1000
+  
+
+  # lambda_hyp: 1.0        # Main hyperbolic loss weight
+  # lambda_ot: 0.5         # Optimal transport loss weight (reduced)
+  # lambda_rep: 0.3        # Repulsive loss weight (increased)
+  # lambda_concept: .05    # Concept-level unlearning weight (new)
+  # lambda_adv: 0.1        # Adversarial unlearning weight (new)
+  # lambda_boundary: 0.005   # Boundary push weight (new)
+  
+  # # Hyperbolic geometry parameters
+  # margin: 0.1            # Increased margin for stronger repulsion
+  # curvature: 1.0         # Poincaré ball curvature
+  # penalty_constant: 0.05  # Slight penalty for stability
+
+  # # Optimal transport parameters
+  # ot_eps: 0.1
+  # ot_max_iter: 1000
     
 
   retain_prompts:
@@ -45,6 +62,6 @@ method_args:
 
   # New parameters for improved unlearning
   use_multi_position_prototypes: true  # Use attention-weighted pooling
-  concept_temperature: 0.05            # Lower temperature for stronger concept loss
+  concept_temperature: 0.2           # Lower temperature for stronger concept loss
   boundary_push_strength: 1.0          # Strength of boundary push
     

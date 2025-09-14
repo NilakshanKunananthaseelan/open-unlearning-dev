@@ -5,10 +5,27 @@ import torch.nn as nn
 import torch
 from typing import Dict, Optional, Any, Union, List, Tuple
 from copy import deepcopy
+import os
+import datetime
 
 from trainer.unlearn.base import UnlearnTrainer
 
+# Set up a global log file path for loss logging
+HYDRA_LOG_DIR = "/home/nilakshan/0-Unlearning/0-open-unlearning-dev/saves/unlearn/tofu_Llama-3.2-1B-Instruct_forget01_HBULBase/.hydra"
+LOSS_LOG_FILE = os.path.join(HYDRA_LOG_DIR, "hbul_loss_log.txt")
 
+def log_losses_to_file(step, loss_hyp, loss_ot, loss_rep, total_loss, params: dict):
+    """
+    Log the hyperbolic and OT loss (and optionally other parameters) to a file.
+    """
+    # Ensure the log directory exists
+    os.makedirs(HYDRA_LOG_DIR, exist_ok=True)
+    now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOSS_LOG_FILE, "a") as f:
+        f.write(f"[{now}] step={step} | hyp_loss={loss_hyp:.6f} | ot_loss={loss_ot:.6f} | rep_loss={loss_rep:.6f} | total_loss={total_loss:.6f}\n")
+        for k, v in params.items():
+            f.write(f"    {k}: {v}\n")
+        f.write("\n")
 
 class BusePenalty(nn.Module):
     """Busemann penalty function for hyperbolic geometry."""
@@ -148,11 +165,6 @@ class HBULBase(UnlearnTrainer):
         else:
             raise ValueError(f"retain_prompts must be an iterable of strings, got {type(retain_prompts)}")
         
-        # print(f'>>>>>>>>>> {self.retain_prompts}')
-        # print(f'>>>>>>>>>> Type: {type(self.retain_prompts)}')
-        # print(f'>>>>>>>>>> Length: {len(self.retain_prompts)}')
-        # for i, prompt in enumerate(self.retain_prompts):
-        #     print(f'>>>>>>>>>> Prompt {i}: {prompt} (type: {type(prompt)})')
         self.lambda_hyp = lambda_hyp
         self.lambda_ot = lambda_ot
         self.lambda_rep = lambda_rep
@@ -310,53 +322,17 @@ class HBULBase(UnlearnTrainer):
         
         return pooled_hidden
 
-    def _concept_level_unlearning_loss(self, forget_embeddings, ideal_prototypes, temperature=None):
-        """
-        Concept-level unlearning loss that forces the model to forget entire concepts.
-        This is more aggressive than sample-level unlearning.
-        """
-        if temperature is None:
-            temperature = self.concept_temperature
-            
-        # Compute hyperbolic distances between forget embeddings and all prototypes
-        cost_matrix = busemann_cost_matrix(forget_embeddings, ideal_prototypes, c=self.curvature)
-        
-        # For concept-level unlearning, we want to maximize distance from ALL prototypes
-        # This ensures the model forgets the entire concept, not just specific samples
-        min_distances = cost_matrix.min(dim=1)[0]  # Minimum distance to any prototype
-        
-        # Apply temperature scaling and convert to loss (minimize distance = maximize loss)
-        concept_loss = torch.log(1 + torch.exp(-min_distances / temperature)).mean()
-        
-        return concept_loss
+    # Removed _concept_level_unlearning_loss and _adversarial_unlearning_loss
 
-    def _adversarial_unlearning_loss(self, forget_embeddings, ideal_prototypes):
-        """
-        Adversarial loss that actively pushes embeddings away from forget class concepts.
-        This creates a stronger repulsive force than standard repulsive loss.
-        """
-        # Compute hyperbolic distances
-        cost_matrix = busemann_cost_matrix(forget_embeddings, ideal_prototypes, c=self.curvature)
-        
-        # Adversarial loss: maximize distance from closest prototype
-        min_distances = cost_matrix.min(dim=1)[0]
-        adv_loss = -min_distances.mean()  # Negative because we want to maximize distance
-        
-        return adv_loss
-
-    def _boundary_push_loss(self, forget_embeddings):
-        """
-        Push embeddings towards the boundary of the Poincaré ball.
-        This creates a strong unlearning signal by moving embeddings to infinity.
-        """
-        # Compute norms in hyperbolic space
-        z_norms = torch.norm(forget_embeddings, dim=1)
-        
-        # Push towards boundary (norm close to 1)
-        # Use negative log to create strong gradient towards boundary
-        boundary_loss = -torch.log(1 - z_norms**2 + 1e-8).mean()
-        
-        return boundary_loss
+    def _update_prototypes(self, update_frequency=100):
+        """Update prototypes during training for better adaptation."""
+        if self.state.global_step % update_frequency == 0:
+            with torch.no_grad():
+                # Re-compute prototypes with current model
+                new_prototypes = self._create_ideal_prototypes().to(self.args.device)
+                # Exponential moving average update
+                alpha = 0.1
+                self.ideal_prototypes = (1 - alpha) * self.ideal_prototypes + alpha * new_prototypes
 
     def compute_loss(self, model, inputs, return_outputs=False, **kwargs):
         """
@@ -386,6 +362,8 @@ class HBULBase(UnlearnTrainer):
         
         
         eos_positions = torch.nonzero(eos_mask, as_tuple=False)
+
+        self._update_prototypes()
         
         if len(eos_positions) == 0:
             # No EOS token found, use the last token
@@ -409,6 +387,7 @@ class HBULBase(UnlearnTrainer):
         token_ids_at_indices = input_ids[torch.arange(input_ids.size(0)), last_eos_token_indices]
         # print("last_eos_token_indices:", last_eos_token_indices)
         # print("token_ids_at_indices:", token_ids_at_indices)
+
         
         # Get the contextual embeddings just before the answer starts
         if self.clip_embeddings:
@@ -421,9 +400,9 @@ class HBULBase(UnlearnTrainer):
         
         avg_norm_z = z.norm(dim=1).mean().item()
         avg_norm_p = p.norm(dim=1).mean().item()
-        # print(f"Average norm of z (forget embeddings in hyperbolic space): {avg_norm_z:.4f}")
-        # print(f"Average norm of p (ideal prototypes in hyperbolic space): {avg_norm_p:.4f}")
-        # print(f"Z shape: {z.shape}, P shape: {p.shape}")
+        print(f"Average norm of z (forget embeddings in hyperbolic space): {avg_norm_z:.4f}")
+        print(f"Average norm of p (ideal prototypes in hyperbolic space): {avg_norm_p:.4f}")
+        print(f"Z shape: {z.shape}, P shape: {p.shape}")
         num_forget, num_protos = z.shape[0], p.shape[0]
 
         # 4. Calculate the Busemann distance matrix (cost matrix for OT)
@@ -441,7 +420,7 @@ class HBULBase(UnlearnTrainer):
         )
         loss_ot = torch.sum(transport_plan * cost_matrix)
 
-        # 6. Hyperbolic (Attraction) Loss
+        # 6. Hyperbolic Unlearning Loss
         assigned_indices = torch.argmax(transport_plan, dim=1)
         print('Assigned IDs',assigned_indices)
         assigned_prototypes = p[assigned_indices]
@@ -458,32 +437,52 @@ class HBULBase(UnlearnTrainer):
 
         loss_rep = torch.clamp(self.margin + C_assigned - topk_vals, min=0).mean()
         
-        # 8. Additional penalty to push embeddings towards boundary (infinity)
-        z_norms = torch.norm(z, dim=1)
-        boundary_penalty = torch.mean(torch.log(1 - z_norms**2 + 1e-8))  # Push towards boundary
         
-        # 9. Additional unlearning losses for stronger forgetting
-        concept_loss = self._concept_level_unlearning_loss(z, p)
-        adv_loss = self._adversarial_unlearning_loss(z, p)
-        boundary_loss = self._boundary_push_loss(z)
+
+        # Removed concept_loss and adv_loss
+        concept_loss = torch.tensor(0.0, device=z.device)
+        adv_loss = torch.tensor(0.0, device=z.device)
+       
         
         # 10. Combine all loss components
         total_loss = (self.lambda_hyp * loss_hyp +
                       self.lambda_ot * loss_ot +
                       self.lambda_rep * loss_rep +
                       self.lambda_concept * concept_loss +
-                      self.lambda_adv * adv_loss +
-                      self.lambda_boundary * boundary_loss
+                      self.lambda_adv * adv_loss
+                     
                       ) 
         
         # Debug information
         if self.state.global_step % self.args.logging_steps == 0:
             print(f"Loss components - hyp: {loss_hyp.item():.4f}, ot: {loss_ot.item():.4f}, rep: {loss_rep.item():.4f}")
-            print(f"New losses - concept: {concept_loss.item():.4f}, adv: {adv_loss.item():.4f}, boundary: {boundary_loss.item():.4f}")
+            print(f"New losses - concept: {concept_loss.item():.4f}, adv: {adv_loss.item():.4f}")
             print(f"Cost matrix stats - min: {cost_matrix.min():.4f}, max: {cost_matrix.max():.4f}, mean: {cost_matrix.mean():.4f}")
             print(f"Transport plan stats - min: {transport_plan.min():.4f}, max: {transport_plan.max():.4f}, mean: {transport_plan.mean():.4f}")
-        
-       
+
+            # Log to file using hydra directory
+            log_params = {
+                "lambda_hyp": self.lambda_hyp,
+                "lambda_ot": self.lambda_ot,
+                "lambda_rep": self.lambda_rep,
+                "margin": self.margin,
+                "curvature": self.curvature,
+                "penalty_constant": self.penalty_constant,
+                "ot_eps": self.ot_eps,
+                "ot_max_iter": self.ot_max_iter,
+                "avg_z_norm": avg_norm_z,
+                "avg_p_norm": avg_norm_p,
+                "num_forget": num_forget,
+                "num_protos": num_protos,
+            }
+            log_losses_to_file(
+                step=self.state.global_step,
+                loss_hyp=loss_hyp.item(),
+                loss_ot=loss_ot.item(),
+                loss_rep=loss_rep.item(),
+                total_loss=total_loss.item(),
+                params=log_params
+            )
         
         # Log losses at specified intervals
         if self.state.global_step % self.args.logging_steps == 0:
@@ -494,9 +493,8 @@ class HBULBase(UnlearnTrainer):
                 "repulsive_loss": loss_rep.detach().item(),
                 "concept_loss": concept_loss.detach().item(),
                 "adversarial_loss": adv_loss.detach().item(),
-                "boundary_loss": boundary_loss.detach().item(),
-                "boundary_penalty": boundary_penalty.detach().item(),
-                "avg_z_norm": z_norms.mean().detach().item(),
+               
+                "avg_z_norm": torch.norm(z, dim=1).mean().detach().item(),
                 "avg_p_norm": torch.norm(p, dim=1).mean().detach().item(),
             })
 
@@ -507,7 +505,7 @@ class HBULBase(UnlearnTrainer):
         return self.current_losses.copy()
 
     def update_hyperparameters(self, lambda_hyp=None, lambda_ot=None, lambda_rep=None, 
-                             lambda_concept=None, lambda_adv=None, lambda_boundary=None,
+                             lambda_concept=None, lambda_adv=None, 
                              margin=None, curvature=None, penalty_constant=None, ot_eps=None, 
                              ot_max_iter=None, use_attention_mask=None, normalize_prototypes=None, 
                              clip_embeddings=None, concept_temperature=None, boundary_push_strength=None):
@@ -522,8 +520,7 @@ class HBULBase(UnlearnTrainer):
             self.lambda_concept = lambda_concept
         if lambda_adv is not None:
             self.lambda_adv = lambda_adv
-        if lambda_boundary is not None:
-            self.lambda_boundary = lambda_boundary
+        
         if margin is not None:
             self.margin = margin
         if curvature is not None:
