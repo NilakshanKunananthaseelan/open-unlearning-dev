@@ -41,27 +41,28 @@ trainer:
     # save_strategy: steps
     # save_steps: 0.5
     
-    # Conservative hyperparameters for forget05 (5+ concepts to forget)
-    lambda_hyp: 0.6        # Reduced main hyperbolic loss weight
-    lambda_ot: 0.4         # Reduced optimal transport loss weight
-    lambda_rep: 0.8        # Reduced repulsive loss weight
-    lambda_concept: 0.3    # Significantly reduced concept-level unlearning weight
-    lambda_adv: 0.2        # Reduced adversarial unlearning weight
-    lambda_boundary: 0.05  # Minimal boundary push weight
+    # Enhanced hyperparameters for forget05 (5+ concepts to forget)
+    # Focus on preventing prototype collapse through stronger repulsive forces
+    lambda_hyp: 1.2        # Increased main hyperbolic loss weight for stronger unlearning
+    lambda_ot: 0.6         # Increased optimal transport loss weight
+    lambda_rep: 2.0        # Significantly increased repulsive loss weight for diversity
+    lambda_concept: 0.5    # Moderate concept-level unlearning weight
+    lambda_adv: 0.3        # Moderate adversarial unlearning weight
+    lambda_boundary: 0.1   # Increased boundary push weight
     
     # Hyperbolic geometry parameters
-    margin: 0.05           # Minimal margin for gentle repulsion
+    margin: 0.3            # Increased margin for stronger repulsion and diversity
     curvature: 1.0         # Poincaré ball curvature
-    penalty_constant: 0.02 # Minimal penalty for stability
+    penalty_constant: 0.05 # Increased penalty for stability
     
-    # Optimal transport parameters
-    ot_eps: 0.1
-    ot_max_iter: 1000
+    # Optimal transport parameters - enhanced for better diversity
+    ot_eps: 0.05           # Reduced epsilon for more precise transport
+    ot_max_iter: 1500      # Increased iterations for better convergence
     
     # New parameters for improved unlearning
     use_multi_position_prototypes: true  # Use attention-weighted pooling
-    concept_temperature: 0.2             # Higher temperature for gentler concept loss
-    boundary_push_strength: 0.3          # Reduced strength of boundary push
+    concept_temperature: 0.15            # Lower temperature for stronger concept loss
+    boundary_push_strength: 0.8          # Increased strength of boundary push for diversity
     adaptive_weighting: true             # Enable adaptive weighting
     
     # Existing parameters

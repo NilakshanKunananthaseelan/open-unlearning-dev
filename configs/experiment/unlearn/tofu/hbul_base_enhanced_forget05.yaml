@@ -1,0 +1,74 @@
+# @package _global_
+
+defaults:
+  - override /model: Llama-3.2-1B-Instruct
+  - override /trainer: HBULBaseEnhanced
+  - override /data: unlearn
+  - override /data/datasets@data.forget: TOFU_QA_forget
+  - override /eval: tofu
+
+model:
+  model_args:
+    pretrained_model_name_or_path: /home/nilakshan/0-Unlearning/0-open-unlearning-dev/saves/finetune/tofu_Llama-3.2-1B-Instruct_full
+forget_split: forget10
+retain_split: retain90
+holdout_split: holdout10
+retain_logs_path: null
+question_key: "question"
+
+eval:
+  tofu:
+    forget_split: ${forget_split}
+    holdout_split: ${holdout_split}
+    retain_logs_path: ${retain_logs_path}
+    overwrite: true
+    question_key: ${question_key}
+    
+data:
+  anchor: forget
+  forget:
+    TOFU_QA_forget: 
+      args:
+        hf_args:
+          name: ${forget_split}
+
+trainer:
+  args:
+    warmup_epochs: 1.0
+    learning_rate: 1e-5  # Moderate learning rate for stable unlearning
+    weight_decay: 0.01
+    num_train_epochs: 20  # Increased epochs for better convergence
+    
+    # Enhanced hyperparameters for forget05 with diversity mechanisms
+    lambda_hyp: 1.5        # Strong hyperbolic loss for effective unlearning
+    lambda_ot: 0.8         # Moderate optimal transport loss
+    lambda_rep: 2.5        # Strong repulsive loss for diversity
+    lambda_concept: 0.6    # Moderate concept-level unlearning
+    lambda_adv: 0.4        # Moderate adversarial unlearning
+    lambda_boundary: 0.15  # Strong boundary push
+    
+    # Hyperbolic geometry parameters
+    margin: 0.4            # Large margin for strong repulsion and diversity
+    curvature: 1.0         # Poincaré ball curvature
+    penalty_constant: 0.08 # Increased penalty for stability
+    
+    # Optimal transport parameters - enhanced for diversity
+    ot_eps: 0.03           # Lower epsilon for more precise transport
+    ot_max_iter: 2000      # More iterations for better convergence
+    
+    # Enhanced diversity parameters
+    entropy_reg: 0.02      # Entropy regularization for transport diversity
+    diversity_weight: 1.5  # Strong diversity loss weight
+    
+    # New parameters for improved unlearning
+    use_multi_position_prototypes: true  # Use attention-weighted pooling
+    concept_temperature: 0.1             # Lower temperature for stronger concept loss
+    boundary_push_strength: 1.0          # Strong boundary push for diversity
+    adaptive_weighting: true             # Enable adaptive weighting
+    
+    # Existing parameters
+    use_attention_mask: true
+    normalize_prototypes: true
+    clip_embeddings: true
+
+task_name: ???
