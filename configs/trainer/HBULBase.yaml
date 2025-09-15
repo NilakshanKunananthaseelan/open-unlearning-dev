@@ -40,7 +40,7 @@ method_args:
   
 
   lambda_hyp: .1        # Main hyperbolic loss weight
-  lambda_ot: 0.5         # Optimal transport loss weight (reduced)
+  lambda_ot: 0.1         # Optimal transport loss weight (reduced)
   lambda_rep: 0.5        # Repulsive loss weight (increased)
   lambda_concept: .0    # Concept-level unlearning weight (new)
   lambda_adv: 0.0        # Adversarial unlearning weight (new)
@@ -52,7 +52,7 @@ method_args:
   penalty_constant: 0.2  # Slight penalty for stability
 
   # Optimal transport parameters
-  ot_eps: 0.25
+  ot_eps: 0.5
   ot_max_iter: 1000
     
 
