@@ -5,9 +5,43 @@ defaults:
 handler: HBULBase
 method_args:
   
-  lambda_hyp: 50.0        # Main hyperbolic loss weight
+  # lambda_hyp: 50.0        # Main hyperbolic loss weight
+  # lambda_ot: 0.5         # Optimal transport loss weight (reduced)
+  # lambda_rep: 0        # Repulsive loss weight (increased)
+  # lambda_concept: .0    # Concept-level unlearning weight (new)
+  # lambda_adv: 0.0        # Adversarial unlearning weight (new)
+  # lambda_boundary: 0.0   # Boundary push weight (new)
+  
+  # # Hyperbolic geometry parameters
+  # margin: 0.2            # Increased margin for stronger repulsion
+  # curvature: 1.0         # Poincaré ball curvature
+  # penalty_constant: 0.1  # Slight penalty for stability
+
+  # # Optimal transport parameters
+  # ot_eps: 0.1
+  # ot_max_iter: 1000
+  # retain_prompts:
+  #   - "The capital of France is Paris."
+  #   - "Water boils at 100 degrees Celsius at sea level."
+  #   - "Albert Einstein developed the theory of relativity."
+  #   - "The chemical symbol for gold is Au."
+  #   - "The Pacific Ocean is the largest ocean on Earth."
+  #   - "Photosynthesis converts light energy into chemical energy."
+  #   - "The Mona Lisa was painted by Leonardo da Vinci."
+  #   - "Mount Everest is the highest mountain in the world."
+  #   - "The currency of Japan is the yen."
+  #   - "The human body has 206 bones."
+  #   - "I don't know."
+  #   - "I'm sorry, I can't answer that."
+  #   - "I do not have enough information to respond."
+  #   - "I'm unable to provide an answer to that question."
+    
+
+  
+
+  lambda_hyp: .1        # Main hyperbolic loss weight
   lambda_ot: 0.5         # Optimal transport loss weight (reduced)
-  lambda_rep: 0        # Repulsive loss weight (increased)
+  lambda_rep: 0.5        # Repulsive loss weight (increased)
   lambda_concept: .0    # Concept-level unlearning weight (new)
   lambda_adv: 0.0        # Adversarial unlearning weight (new)
   lambda_boundary: 0.0   # Boundary push weight (new)
@@ -15,28 +49,11 @@ method_args:
   # Hyperbolic geometry parameters
   margin: 0.2            # Increased margin for stronger repulsion
   curvature: 1.0         # Poincaré ball curvature
-  penalty_constant: 0.1  # Slight penalty for stability
+  penalty_constant: 0.2  # Slight penalty for stability
 
   # Optimal transport parameters
-  ot_eps: 0.1
+  ot_eps: 0.25
   ot_max_iter: 1000
-  
-
-  # lambda_hyp: 1.0        # Main hyperbolic loss weight
-  # lambda_ot: 0.5         # Optimal transport loss weight (reduced)
-  # lambda_rep: 0.3        # Repulsive loss weight (increased)
-  # lambda_concept: .05    # Concept-level unlearning weight (new)
-  # lambda_adv: 0.1        # Adversarial unlearning weight (new)
-  # lambda_boundary: 0.005   # Boundary push weight (new)
-  
-  # # Hyperbolic geometry parameters
-  # margin: 0.1            # Increased margin for stronger repulsion
-  # curvature: 1.0         # Poincaré ball curvature
-  # penalty_constant: 0.05  # Slight penalty for stability
-
-  # # Optimal transport parameters
-  # ot_eps: 0.1
-  # ot_max_iter: 1000
     
 
   retain_prompts:
@@ -54,7 +71,23 @@ method_args:
     - "I'm sorry, I can't answer that."
     - "I do not have enough information to respond."
     - "I'm unable to provide an answer to that question."
-    
+    - "The Great Wall of China is visible from space."
+    - "The speed of light is approximately 299,792 kilometers per second."
+    - "Shakespeare wrote Hamlet."
+    - "The human heart has four chambers."
+    - "The tallest building in the world is the Burj Khalifa."
+    - "The Amazon rainforest is the largest rainforest on Earth."
+    - "Pi is approximately 3.14159."
+    - "The boiling point of water decreases at higher altitudes."
+    - "The Statue of Liberty was a gift from France to the United States."
+    - "The Earth revolves around the Sun."
+    - "DNA stands for deoxyribonucleic acid."
+    - "The largest planet in our solar system is Jupiter."
+    - "The Sahara is the largest hot desert in the world."
+    - "The square root of 64 is 8."
+    - "The human body is made up of about 60% water."
+    - "The currency of the United Kingdom is the pound sterling."
+    - "The longest river in the world is the Nile."
 
   use_attention_mask: true    # Whether to use attention mask for prototype creation
   normalize_prototypes: true  # Whether to normalize prototypes to boundary

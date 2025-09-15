@@ -37,7 +37,7 @@ trainer:
     warmup_epochs: 1.0
     learning_rate: 2e-5  # Increased learning rate for stronger unlearning
     weight_decay: 0.01
-    num_train_epochs: 30  # Reduced epochs but with stronger unlearning
+    num_train_epochs: 10  # Reduced epochs but with stronger unlearning
     
 
     # warmup_epochs: 1.0

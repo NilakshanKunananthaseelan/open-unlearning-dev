@@ -439,21 +439,65 @@ class HBULBase(UnlearnTrainer):
         loss_ot = torch.sum(transport_plan * cost_matrix)
 
         # 6. Hyperbolic Unlearning Loss
-        assigned_indices = torch.argmax(transport_plan, dim=1)
-        print('Assigned IDs',assigned_indices)
-        assigned_prototypes = p[assigned_indices]
-        loss_hyp = self.busemann_fn(z, assigned_prototypes).mean()
+        selection='topk'
+        if selection=='argmax':
+            assigned_indices = torch.argmax(transport_plan, dim=1)
+            print('Assigned IDs',assigned_indices)
+            assigned_prototypes = p[assigned_indices]
+            loss_hyp = self.busemann_fn(z, assigned_prototypes).mean()
 
-        
+            
 
-        assigned_k = transport_plan.argmax(dim=1)
-        C_assigned = cost_matrix[torch.arange(num_forget), assigned_k].unsqueeze(1)  # [B,1]
+            assigned_k = transport_plan.argmax(dim=1)
+            C_assigned = cost_matrix[torch.arange(num_forget), assigned_k].unsqueeze(1)  # [B,1]
 
-        C_masked = cost_matrix.clone()
-        C_masked[torch.arange(num_forget), assigned_k] = float('inf')
-        topk_vals, _ = C_masked.topk(k=min(5, num_protos - 1), dim=1, largest=False)  # closest non-assigned
+            C_masked = cost_matrix.clone()
+            C_masked[torch.arange(num_forget), assigned_k] = float('inf')
+            topk_vals, _ = C_masked.topk(k=min(5, num_protos - 1), dim=1, largest=False)  # closest non-assigned
 
-        loss_rep = torch.clamp(self.margin + C_assigned - topk_vals, min=0).mean()
+            loss_rep = torch.clamp(self.margin + C_assigned - topk_vals, min=0).mean()
+        elif selection=='topk':
+            # Top-k prototype selection with Möbius-weighted barycenter and repulsive loss
+            c = self.curvature
+            topk = min(5, num_protos)
+            print('using top', topk)
+
+            # Select top-k prototypes per sample according to transport mass
+            topk_weights, topk_indices = transport_plan.topk(topk, dim=1)  # [B, k]
+            selected_prototypes_topk = p[topk_indices]  # [B, k, D]
+
+            # Normalize weights across the k selected prototypes
+            topk_weights = topk_weights / (topk_weights.sum(dim=1, keepdim=True) + 1e-8)
+
+            def mobius_weighted_sum(weights, points, c_val):
+                # weights: [B, k], points: [B, k, D]
+                B, k_sel, D = points.shape
+                # Start from the first point scaled by its weight
+                result = weights[:, 0].unsqueeze(-1) * points[:, 0, :]
+                for i in range(1, k_sel):
+                    w = weights[:, i].unsqueeze(-1)
+                    result = self._mobius_add(result, w * points[:, i, :], c=c_val)
+                return result
+
+            # Compute hyperbolic barycenter of selected prototypes
+            selected_prototypes = mobius_weighted_sum(topk_weights, selected_prototypes_topk, c)
+            loss_hyp = self.busemann_fn(z, selected_prototypes).mean()
+
+            # Repulsive loss against nearest non-selected prototypes using cost matrix
+            # Compute weighted cost of selected set per sample
+            C_selected = cost_matrix.gather(1, topk_indices)  # [B, k]
+            C_selected_weighted = (C_selected * topk_weights).sum(dim=1, keepdim=True)  # [B, 1]
+
+            # Mask out selected indices and get top-m closest non-selected
+            non_selected_mask = torch.ones_like(cost_matrix, dtype=torch.bool)
+            non_selected_mask.scatter_(1, topk_indices, False)
+            C_non_selected = cost_matrix.masked_fill(~non_selected_mask, float('inf'))
+            neg_k = min(5, max(1, num_protos - topk))
+            nearest_non_selected, _ = C_non_selected.topk(k=neg_k, dim=1, largest=False)
+
+            # Margin-based repulsion: encourage selected costs to be at least margin lower
+            loss_rep = torch.clamp(self.margin + C_selected_weighted - nearest_non_selected, min=0).mean()
+
         
         
 
